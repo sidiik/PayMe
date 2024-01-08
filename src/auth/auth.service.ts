@@ -47,6 +47,9 @@ export class AuthService {
     if (!isValidPassword)
       throw new UnauthorizedException('Invalid credentials.');
 
-    return { ...findUser, access_token: this.jwt.sign(findUser.email) };
+    return {
+      ...findUser,
+      access_token: this.jwt.sign({ email: findUser.email }),
+    };
   }
 }
