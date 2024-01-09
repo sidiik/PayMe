@@ -1,7 +1,12 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUser } from './user.dto';
 import * as argon2 from 'argon2';
+import { Roles } from '@prisma/client';
 
 @Injectable()
 export class UserService {
@@ -61,7 +66,28 @@ export class UserService {
   //   TODO: update user
   async updateUser() {}
 
-  //   TODO: Change password
+  //   TODO: Change role
+  async changeRole(email: string, role: Roles, isVerified: boolean) {
+    try {
+      const user = await this.findUser(email);
+      if (!user) throw new NotFoundException('User not found');
+
+      const updatedUser = await this.prisma.user.update({
+        where: {
+          email,
+        },
+        data: {
+          role,
+          isVerified,
+        },
+      });
+
+      return updatedUser;
+    } catch (error) {
+      console.log(error);
+      throw new BadRequestException(error.response.message);
+    }
+  }
 
   //   TODO: forget password
 }

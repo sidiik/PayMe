@@ -6,24 +6,59 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+enum Roles {
+  ADMIN
+  EDITOR
+  USER
+}
+
+enum TransactionType {
+  SENT
+  RECIEVED
+  DEPOSITED
+}
+
 model User {
-  id        Int       @id @default(autoincrement())
-  firstname String
-  lastname  String
-  email     String    @unique
-  password  String
-  Phone     Phone?
-  isDeleted Boolean   @default(false)
-  deletedAt DateTime?
+  id         Int       @id @default(autoincrement())
+  firstname  String
+  lastname   String
+  email      String    @unique
+  password   String
+  Phone      Phone?
+  isDeleted  Boolean   @default(false)
+  deletedAt  DateTime?
+  isVerified Boolean   @default(false)
+  role       Roles     @default(USER)
 }
 
 model Phone {
-  id     Int    @id @default(autoincrement())
-  number String @unique
-  userId Int    @unique
-  User   User   @relation(fields: [userId], references: [id])
+  id         Int         @id @default(autoincrement())
+  number     String      @unique
+  userId     Int         @unique
+  User       User        @relation(fields: [userId], references: [id])
+  AccountUSD AccountUSD?
+}
+
+model AccountUSD {
+  id                   Int               @id @default(autoincrement())
+  accountNumber        String            @unique
+  balance              Float
+  phoneId              Int               @unique
+  Phone                Phone             @relation(fields: [phoneId], references: [id])
+  sentTransactions     TransactionsUSD[] @relation("sender")
+  recievedTransactions TransactionsUSD[] @relation("reciever")
+}
+
+model TransactionsUSD {
+  id          Int        @id @default(autoincrement())
+  amount      Float
+  description String
+  sender_id   Int
+  sender      AccountUSD @relation("sender", fields: [sender_id], references: [id])
+  reciever_id Int
+  reciever    AccountUSD @relation("reciever", fields: [reciever_id], references: [id])
 }

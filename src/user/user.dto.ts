@@ -1,5 +1,7 @@
+import { $Enums } from '@prisma/client';
 import { Expose, Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsEmail,
   IsNotEmpty,
   IsNumber,
@@ -7,6 +9,7 @@ import {
   IsString,
   Min,
   MinLength,
+  isNotEmpty,
   isString,
 } from 'class-validator';
 
@@ -51,6 +54,10 @@ export class UserDto {
   @Expose()
   @Type(() => Phone)
   Phone: string;
+  @Expose()
+  role: string;
+  @Expose()
+  isVerified: boolean;
 }
 export class loginDto {
   @Expose()
@@ -58,17 +65,21 @@ export class loginDto {
   @Expose()
   email: string;
   @Expose()
-  firstname: string;
-  @Expose()
-  lastname: string;
-  @Expose()
-  @Type(() => Phone)
-  Phone: string;
-  @Expose()
   access_token: string;
 }
 
 export class Phone {
   @Expose()
   number: string;
+}
+
+export class changeRoleDto {
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+  @IsString()
+  @IsNotEmpty()
+  role: $Enums.Roles;
+  @IsBoolean()
+  isVerified: boolean;
 }

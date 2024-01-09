@@ -30,15 +30,16 @@ export class SerializeInterceptor implements NestInterceptor {
         const transformedData = plainToInstance(this.dto, data, {
           excludeExtraneousValues: true,
         });
-
         return ApiResponse.Success(transformedData, response.statusCode);
       }),
       catchError((error) => {
-        response.status(error.status);
         console.log(error);
+        response.status(error.status);
         return of(
           ApiResponse.Failure(
-            [error.response.message],
+            Array.isArray(error.response?.message)
+              ? error.response?.message
+              : [],
             response.statusCode,
             error.message,
           ),
