@@ -66,6 +66,8 @@ export class loginDto {
   email: string;
   @Expose()
   access_token: string;
+  @Expose()
+  role: string;
 }
 
 export class Phone {

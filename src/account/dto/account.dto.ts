@@ -1,13 +1,21 @@
-import { Type } from 'class-transformer';
-import { IsNotEmpty, IsNumberString, isNumberString } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsNotEmpty, IsString } from 'class-validator';
 import { UserDto } from 'src/user/user.dto';
 import { Expose } from 'class-transformer';
-import { resPagination } from 'src/DTOs/pagination.dto';
+
+export class accTypeDto {
+  @IsString()
+  @IsNotEmpty()
+  accTypeSlug: string;
+}
 
 export class NewAccountDto {
-  @IsNumberString()
+  @IsString()
   @IsNotEmpty()
-  phoneNumber: string;
+  fullname: string;
+  @IsString()
+  @IsNotEmpty()
+  accTypeSlug: string;
 }
 
 export class AccountPhone {
@@ -25,6 +33,8 @@ export class AccountDto {
   accountNumber: string;
   @Expose()
   balance: number;
+  @Expose()
+  accountType: any;
   @Expose()
   @Type(() => AccountPhone)
   Phone: AccountPhone;

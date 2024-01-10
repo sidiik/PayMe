@@ -17,8 +17,7 @@ enum Roles {
 }
 
 enum TransactionType {
-  SENT
-  RECIEVED
+  TRANSFER
   DEPOSITED
 }
 
@@ -36,29 +35,46 @@ model User {
 }
 
 model Phone {
-  id         Int         @id @default(autoincrement())
-  number     String      @unique
-  userId     Int         @unique
-  User       User        @relation(fields: [userId], references: [id])
-  AccountUSD AccountUSD?
+  id      Int       @id @default(autoincrement())
+  number  String    @unique
+  userId  Int       @unique
+  User    User      @relation(fields: [userId], references: [id])
+  Account Account[]
 }
 
-model AccountUSD {
-  id                   Int               @id @default(autoincrement())
-  accountNumber        String            @unique
+model AccountTypes {
+  id            Int            @id @default(autoincrement())
+  account_title String
+  account_slug  String         @unique
+  Account       Account[]
+  Transactions  Transactions[]
+}
+
+model Account {
+  id                   Int            @id @default(autoincrement())
+  fullname             String
+  accountNumber        String
   balance              Float
-  phoneId              Int               @unique
-  Phone                Phone             @relation(fields: [phoneId], references: [id])
-  sentTransactions     TransactionsUSD[] @relation("sender")
-  recievedTransactions TransactionsUSD[] @relation("reciever")
+  phoneId              Int
+  Phone                Phone          @relation(fields: [phoneId], references: [id])
+  sentTransactions     Transactions[] @relation("sender")
+  recievedTransactions Transactions[] @relation("reciever")
+  accountTypeId        Int
+  accountType          AccountTypes   @relation(fields: [accountTypeId], references: [id])
+
+  @@unique([accountNumber, accountTypeId, phoneId])
 }
 
-model TransactionsUSD {
-  id          Int        @id @default(autoincrement())
+model Transactions {
+  id          Int             @id @default(autoincrement())
   amount      Float
   description String
-  sender_id   Int
-  sender      AccountUSD @relation("sender", fields: [sender_id], references: [id])
+  type        TransactionType
+  createdAt   DateTime        @default(now())
+  sender_id   Int?
+  sender      Account?        @relation("sender", fields: [sender_id], references: [id])
   reciever_id Int
-  reciever    AccountUSD @relation("reciever", fields: [reciever_id], references: [id])
+  reciever    Account         @relation("reciever", fields: [reciever_id], references: [id])
+  accTypeId   Int
+  accountType AccountTypes    @relation(fields: [accTypeId], references: [id])
 }

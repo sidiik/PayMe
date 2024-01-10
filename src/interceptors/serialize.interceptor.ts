@@ -33,7 +33,6 @@ export class SerializeInterceptor implements NestInterceptor {
         return ApiResponse.Success(transformedData, response.statusCode);
       }),
       catchError((error) => {
-        console.log(error);
         response.status(error.status);
         return of(
           ApiResponse.Failure(
