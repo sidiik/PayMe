@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { AccountService } from 'src/account/account.service';
@@ -13,7 +14,7 @@ import {
 } from './dto/transaction.dto';
 import { reqPagination } from 'src/DTOs/pagination.dto';
 import { currencySymbol } from 'src/utils/currencySymbol';
-import { Prisma } from '@prisma/client';
+import { Prisma, Roles, TransactionType } from '@prisma/client';
 
 @Injectable()
 export class TransactionService {
@@ -78,98 +79,114 @@ export class TransactionService {
     pagination: reqPagination,
     filters: TransactionFilters,
   ) {
-    const skip = (pagination.page - 1) * pagination.size || 0;
-    const account = await this.accountService.findAccountType(
-      filters.accTypeSlug,
-    );
+    try {
+      const skip = (pagination.page - 1) * pagination.size || 0;
+      const account = await this.accountService.findAccountType(
+        filters.accTypeSlug,
+      );
 
-    if (!account)
-      throw new BadRequestException(`${filters.accTypeSlug} not supported.`);
+      if (!account)
+        throw new BadRequestException(`${filters.accTypeSlug} not supported.`);
 
-    const transactionFilters: Prisma.TransactionsWhereInput = {
-      type: JSON.parse(filters.deposit.toString()) ? 'DEPOSITED' : 'TRANSFER',
-      accountType: {
-        account_slug: filters.accTypeSlug,
-      },
-      OR: filters.phoneNumber && [
-        {
-          sender: {
-            Phone: {
-              number: filters.phoneNumber || null,
-            },
-          },
-        },
-        {
-          reciever: {
-            Phone: {
-              number: filters.phoneNumber || null,
-            },
-          },
-        },
-      ],
-      createdAt: filters.startDate &&
-        filters.endDate && {
-          lte: new Date(filters.endDate),
-          gte: new Date(filters.startDate),
-        },
-    };
+      if (
+        !Object.values(TransactionType).includes(
+          filters.type.toUpperCase() as TransactionType,
+        )
+      ) {
+        throw new BadRequestException(
+          `${filters.type} as transaction type is not supported.`,
+        );
+      }
 
-    const totalCount = await this.prisma.transactions.count({
-      where: transactionFilters,
-    });
-    const transactions = await this.prisma.transactions.findMany({
-      skip,
-      take: pagination.size,
-      include: {
+      const transactionFilters: Prisma.TransactionsWhereInput = {
+        type: (filters.type.toUpperCase() as TransactionType) || 'TRANSFER',
         accountType: {
-          select: {
-            account_title: true,
-            account_slug: true,
-          },
+          account_slug: filters.accTypeSlug,
         },
-        reciever: {
-          select: {
-            Phone: {
-              select: {
-                number: true,
+        OR: filters.phoneNumber && [
+          {
+            sender: {
+              Phone: {
+                number: filters.phoneNumber || null,
+              },
+            },
+          },
+          {
+            reciever: {
+              Phone: {
+                number: filters.phoneNumber || null,
+              },
+            },
+          },
+        ],
+        createdAt: filters.startDate &&
+          filters.endDate && {
+            lte: new Date(filters.endDate),
+            gte: new Date(filters.startDate),
+          },
+      };
 
-                User: {
-                  select: {
-                    firstname: true,
-                    lastname: true,
+      const totalCount = await this.prisma.transactions.count({
+        where: transactionFilters,
+      });
+      const transactions = await this.prisma.transactions.findMany({
+        skip,
+        take: pagination.size,
+        include: {
+          accountType: {
+            select: {
+              account_title: true,
+              account_slug: true,
+            },
+          },
+          reciever: {
+            select: {
+              Phone: {
+                select: {
+                  number: true,
+
+                  User: {
+                    select: {
+                      firstname: true,
+                      lastname: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          sender: {
+            select: {
+              Phone: {
+                select: {
+                  number: true,
+
+                  User: {
+                    select: {
+                      firstname: true,
+                      lastname: true,
+                    },
                   },
                 },
               },
             },
           },
         },
-        sender: {
-          select: {
-            Phone: {
-              select: {
-                number: true,
+        where: transactionFilters,
+      });
 
-                User: {
-                  select: {
-                    firstname: true,
-                    lastname: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      where: transactionFilters,
-    });
-
-    return {
-      transactions,
-      page: pagination.page,
-      size: pagination.size,
-      totalPages: Math.ceil(totalCount / pagination.size),
-      totalCount,
-    };
+      return {
+        transactions,
+        page: pagination.page,
+        size: pagination.size,
+        totalPages: Math.ceil(totalCount / pagination.size),
+        totalCount,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        error.response ? error : 'Something went wrong.',
+      );
+    }
   }
 
   //   TODO: Send money to other account
@@ -278,7 +295,7 @@ export class TransactionService {
             senderAccount.fullname
           } (${senderAccount.Phone.number}) has sent ${currency}${parseFloat(
             transferData.amount.toFixed(2),
-          )} to ${recieverAccount.fullname} ${recieverAccount.fullname} (${
+          )} to ${recieverAccount.fullname} (${
             recieverAccount.Phone.number
           }), Your current balance is ${currency}${sender.balance.toFixed(2)}`,
           type: 'TRANSFER',

@@ -29,6 +29,19 @@ CREATE TABLE "Phone" (
 );
 
 -- CreateTable
+CREATE TABLE "Merchant" (
+    "id" SERIAL NOT NULL,
+    "licenseNo" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "address" TEXT NOT NULL,
+    "isVerified" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "userId" INTEGER NOT NULL,
+
+    CONSTRAINT "Merchant_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "AccountTypes" (
     "id" SERIAL NOT NULL,
     "account_title" TEXT NOT NULL,
@@ -63,6 +76,18 @@ CREATE TABLE "Transactions" (
     CONSTRAINT "Transactions_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Exchange" (
+    "id" SERIAL NOT NULL,
+    "fromAccountTypeId" INTEGER NOT NULL,
+    "toAccountTypeId" INTEGER NOT NULL,
+    "amount" DOUBLE PRECISION NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Exchange_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -82,6 +107,9 @@ CREATE UNIQUE INDEX "Account_accountNumber_accountTypeId_phoneId_key" ON "Accoun
 ALTER TABLE "Phone" ADD CONSTRAINT "Phone_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Merchant" ADD CONSTRAINT "Merchant_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Account" ADD CONSTRAINT "Account_phoneId_fkey" FOREIGN KEY ("phoneId") REFERENCES "Phone"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -95,3 +123,9 @@ ALTER TABLE "Transactions" ADD CONSTRAINT "Transactions_reciever_id_fkey" FOREIG
 
 -- AddForeignKey
 ALTER TABLE "Transactions" ADD CONSTRAINT "Transactions_accTypeId_fkey" FOREIGN KEY ("accTypeId") REFERENCES "AccountTypes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Exchange" ADD CONSTRAINT "Exchange_fromAccountTypeId_fkey" FOREIGN KEY ("fromAccountTypeId") REFERENCES "AccountTypes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Exchange" ADD CONSTRAINT "Exchange_toAccountTypeId_fkey" FOREIGN KEY ("toAccountTypeId") REFERENCES "AccountTypes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

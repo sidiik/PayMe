@@ -32,9 +32,9 @@ export class Deposit {
 }
 
 export class TransactionFilters {
-  @IsBooleanString()
+  @IsString()
   @IsOptional()
-  deposit: boolean;
+  type: string;
 
   @IsString()
   @IsNotEmpty()

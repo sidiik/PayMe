@@ -22,16 +22,17 @@ enum TransactionType {
 }
 
 model User {
-  id         Int       @id @default(autoincrement())
+  id         Int        @id @default(autoincrement())
   firstname  String
   lastname   String
-  email      String    @unique
+  email      String     @unique
   password   String
   Phone      Phone?
-  isDeleted  Boolean   @default(false)
+  isDeleted  Boolean    @default(false)
   deletedAt  DateTime?
-  isVerified Boolean   @default(false)
-  role       Roles     @default(USER)
+  isVerified Boolean    @default(false)
+  role       Roles      @default(USER)
+  Merchant   Merchant[]
 }
 
 model Phone {
@@ -42,12 +43,25 @@ model Phone {
   Account Account[]
 }
 
+model Merchant {
+  id         Int      @id @default(autoincrement())
+  licenseNo  String
+  name       String
+  address    String
+  isVerified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+}
+
 model AccountTypes {
   id            Int            @id @default(autoincrement())
   account_title String
   account_slug  String         @unique
   Account       Account[]
   Transactions  Transactions[]
+  fromExchange  Exchange[]     @relation("fromAccountType")
+  toExchange    Exchange[]     @relation("toAccountType")
 }
 
 model Account {
@@ -77,4 +91,15 @@ model Transactions {
   reciever    Account         @relation("reciever", fields: [reciever_id], references: [id])
   accTypeId   Int
   accountType AccountTypes    @relation(fields: [accTypeId], references: [id])
+}
+
+model Exchange {
+  id                Int          @id @default(autoincrement())
+  fromAccountTypeId Int
+  fromAccountType   AccountTypes @relation("fromAccountType", fields: [fromAccountTypeId], references: [id])
+  toAccountTypeId   Int
+  toAccountType     AccountTypes @relation("toAccountType", fields: [toAccountTypeId], references: [id])
+  amount            Float
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 }
