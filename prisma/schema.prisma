@@ -79,6 +79,12 @@ model Account {
   @@unique([accountNumber, accountTypeId, phoneId])
 }
 
+model Exchanger {
+  id            Int    @id @default(autoincrement())
+  name          String
+  accountNumber String
+}
+
 model Transactions {
   id          Int             @id @default(autoincrement())
   amount      Float

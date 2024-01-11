@@ -85,12 +85,14 @@ export class TransactionService {
         filters.accTypeSlug,
       );
 
-      if (!account)
+      if (!account && filters.accTypeSlug !== 'null')
         throw new BadRequestException(`${filters.accTypeSlug} not supported.`);
 
       if (
+        filters.type &&
+        filters.type !== 'null' &&
         !Object.values(TransactionType).includes(
-          filters.type.toUpperCase() as TransactionType,
+          filters.type?.toUpperCase() as TransactionType,
         )
       ) {
         throw new BadRequestException(
@@ -99,22 +101,19 @@ export class TransactionService {
       }
 
       const transactionFilters: Prisma.TransactionsWhereInput = {
-        type: (filters.type.toUpperCase() as TransactionType) || 'TRANSFER',
+        type:
+          filters.type && filters.type !== 'null'
+            ? (filters.type?.toUpperCase() as TransactionType)
+            : undefined,
         accountType: {
-          account_slug: filters.accTypeSlug,
+          account_slug:
+            filters.accTypeSlug === 'null' ? undefined : filters.accTypeSlug,
         },
-        OR: filters.phoneNumber && [
+        OR: [
           {
             sender: {
               Phone: {
-                number: filters.phoneNumber || null,
-              },
-            },
-          },
-          {
-            reciever: {
-              Phone: {
-                number: filters.phoneNumber || null,
+                number: filters.senderPhoneNumber || undefined,
               },
             },
           },
@@ -183,6 +182,7 @@ export class TransactionService {
         totalCount,
       };
     } catch (error) {
+      console.log(error);
       throw new InternalServerErrorException(
         error.response ? error : 'Something went wrong.',
       );

@@ -42,7 +42,12 @@ export class TransactionFilters {
 
   @IsNumberString()
   @IsOptional()
-  phoneNumber: string;
+  senderPhoneNumber: string;
+
+  @IsNumberString()
+  @IsOptional()
+  receiverPhoneNumber: string;
+
   @IsDateString()
   @IsOptional()
   startDate: string;
