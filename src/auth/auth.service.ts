@@ -49,7 +49,26 @@ export class AuthService {
 
     return {
       ...findUser,
-      access_token: this.jwt.sign({ email: findUser.email }),
+      access_token: await this.genAccessToken(findUser.email),
+      refresh_token: await this.genRefreshToken(findUser.email),
     };
+  }
+
+  async genAccessToken(email: string) {
+    return this.jwt.sign(
+      { email },
+      {
+        expiresIn: '15m',
+      },
+    );
+  }
+
+  async genRefreshToken(email: string) {
+    return this.jwt.sign(
+      { email },
+      {
+        expiresIn: '3d',
+      },
+    );
   }
 }

@@ -6,6 +6,7 @@ import {
   HttpCode,
   Post,
   Put,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -17,12 +18,13 @@ import {
 } from './user.dto';
 import { AuthService } from 'src/auth/auth.service';
 import { Serialize } from 'src/interceptors/serialize.interceptor';
-import { JwtGuard } from 'src/guards/jwt.guard';
+import { JwtGuard, RefreshGuard } from 'src/guards/jwt.guard';
 import { GetUser } from './decorators/user.decorator';
 import { User } from '@prisma/client';
 import { VerifyGuard } from 'src/guards/verify.guard';
 import { UserService } from './user.service';
 import { AdminGuard } from 'src/guards/admin.guard';
+import { Response } from 'express';
 
 @Controller('user')
 export class UserController {
@@ -39,8 +41,24 @@ export class UserController {
   @Serialize(loginDto)
   @HttpCode(200)
   @Post('login')
-  login(@Body() user: LoginUserDto) {
-    return this.authService.login(user);
+  async login(
+    @Body() user: LoginUserDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { access_token, refresh_token, ...rest } =
+      await this.authService.login(user);
+
+    res.cookie('access_token', access_token, {
+      httpOnly: true,
+      expires: new Date(Date.now() + 3600 * 1000),
+    });
+
+    res.cookie('refresh_token', refresh_token, {
+      httpOnly: true,
+      expires: new Date(Date.now() + 3600 * 24 * 3 * 1000),
+    });
+
+    return rest;
   }
 
   @Serialize(UserDto)
@@ -64,5 +82,21 @@ export class UserController {
       throw new BadRequestException('You are not allowed to change your role.');
     }
     return this.userService.changeRole(data.email, data.role, data.isVerified);
+  }
+
+  @UseGuards(RefreshGuard)
+  @Get('refresh')
+  async refreshToken(
+    @GetUser() user: User,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const accessToken = await this.authService.genAccessToken(user.email);
+    res.cookie('access_token', accessToken, {
+      expires: new Date(Date.now() + 3600 * 1000),
+    });
+
+    return {
+      isSuccess: true,
+    };
   }
 }
